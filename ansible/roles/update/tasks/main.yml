@@ -1,0 +1,9 @@
+---
+- name: copy script
+  template: src=/home/ubuntu/ansible/roles/update/templates/start.sh dest=/home/ubuntu/start.sh owner=root group=root mode=0777
+
+- name: chmod +x script
+  shell: sudo chmod +x /home/ubuntu/start.sh
+
+- name: start scirpt
+  shell: sudo /home/ubuntu/start.sh

@@ -1,0 +1,17 @@
+---
+- name: Include OS Specific setup tasks
+  include: setup-Debian.yml
+
+- name: Generate logstash.conf template
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    mode: '0644'
+  with_items:
+    - { src: ./roles/logstash/templates/logstash.conf.j2, dest: /etc/logstash/conf.d/logstash.conf }
+
+- name: Start and enable logstash
+  systemd: 
+     name: logstash
+     state: started 
+     enabled: yes

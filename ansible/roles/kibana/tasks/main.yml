@@ -1,0 +1,74 @@
+---
+- include: setup-Debian.yml
+  when: ansible_os_family == 'Debian'
+
+- name: Install kibana, nginx
+  apt: 
+    state: present
+    name:
+      - kibana
+      - nginx
+      
+- name: Generate kibana.conf for nginx from template
+  template:
+    src: "{{ kibana_config_nginx }}"
+    dest: /etc/nginx/conf.d/kibana.conf
+    mode: '0644'
+
+- name: Change default configs for nginx
+  template:
+    src: "{{ config_nginx }}"
+    dest: /etc/nginx/nginx.conf
+    mode: '0644'
+  notify: reloaded nginx
+
+- name: Generate Kibana configuration.
+  template:
+    src: "{{ kibana_config_template }}"
+    dest: "{{ kibana_config_file_path }}"
+    owner: root
+    group: root
+    mode: 0644
+  notify: reloaded kibana
+
+- name: Install oauth2-proxy 
+  get_url:
+    url: https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v6.1.1/oauth2-proxy-v6.1.1.linux-amd64.tar.gz
+    dest: /tmp
+  register: archive
+
+- name: Unarchive oauth2-proxy 
+  unarchive:
+    src: /tmp/oauth2-proxy-v6.1.1.linux-amd64.tar.gz
+    dest: /tmp
+    remote_src: yes
+  when: archive.changed
+
+- name: Get sha256sum checksum
+  get_url:
+    url: https://github.com/oauth2-proxy/oauth2-proxy/releases/download/v6.1.1/oauth2-proxy-v6.1.1.linux-amd64-sha256sum.txt
+    dest: /tmp
+  when: archive.changed
+
+- name: Validate oauth2-proxy binary 
+  shell: sha256sum -c oauth2-proxy-v6.1.1.linux-amd64-sha256sum.txt 2>&1 | grep OK
+  args:
+    chdir: /tmp
+  when: archive.changed
+
+- name: Start oauth2-proxy
+  shell: |
+    nohup ./oauth2-proxy \
+    --email-domain=* \
+    --http-address="http://127.0.0.1:4180" \
+    --upstream="http://127.0.0.1:8080" \
+    --approval-prompt="auto" \
+    --provider=github \
+    --cookie-secret="secret123dascret" \
+    --cookie-name="_oauth2_proxy" \
+    --cookie-secure=false \
+    --client-id="{{ my_github_id }}" \
+    --client-secret="{{ my_github_secret }}" </dev/null >/dev/null 2>&1 &
+  args:
+    chdir: /tmp/oauth2-proxy-v6.1.1.linux-amd64
+

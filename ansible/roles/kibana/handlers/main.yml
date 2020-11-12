@@ -1,0 +1,6 @@
+---
+- name: reloaded kibana
+  service: name=kibana state=reloaded
+
+- name: reloaded nginx
+  service: name=nginx state=reloaded

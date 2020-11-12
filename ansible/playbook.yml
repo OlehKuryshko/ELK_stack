@@ -1,0 +1,26 @@
+---
+# -------all
+- hosts: all
+  become: true
+  roles:
+    - update
+
+# -------elasticsearch
+- hosts: elasticsearch
+  become: true
+  roles:
+    - elasticsearch
+
+
+# -------kibana
+- hosts: kibana
+  become: true
+  roles:
+    - kibana
+
+# -------logstash
+- hosts: logstash
+  become: true
+  roles:
+    - logstash
+    - filebeat
